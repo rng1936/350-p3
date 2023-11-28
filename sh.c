@@ -57,11 +57,11 @@ struct cmd *parsecmd(char*);
 void
 runcmd(struct cmd *cmd)
 {
-  //int p[2];
+  int p[2];
   //struct backcmd *bcmd;
   struct execcmd *ecmd;
   struct listcmd *lcmd;
-  //struct pipecmd *pcmd;
+  struct pipecmd *pcmd;
   //struct redircmd *rcmd;
   
   if(cmd == 0)
@@ -85,11 +85,11 @@ runcmd(struct cmd *cmd)
 
   case LIST:
     lcmd = (struct listcmd*)cmd;
-    int pid = fork();
-    if (pid < 0) {
-      printf(1, "list failed\n");
+    int child_pid = fork();
+    if (child_pid < 0) {
+      printf(2, "fork failed\n");
       break;
-    } else if (pid == 0) {
+    } else if (child_pid == 0) {
       runcmd(lcmd->left);
     } else {
       wait();
@@ -98,7 +98,39 @@ runcmd(struct cmd *cmd)
     break;
 
   case PIPE:
-    printf(2, "Pipe Not implemented\n");
+    pcmd = (struct pipecmd*)cmd;
+    if (pipe(p) == -1) {
+      printf(2, "pipe failed\n");
+      break;
+    }
+
+    int child_pid1 = fork();
+    if (child_pid1 < 0) {
+      printf(2, "fork failed\n");
+      break;
+    } else if (child_pid1 == 0) {
+      close(1);
+      dup(p[1]);
+      close(p[0]);
+      runcmd(pcmd->left);
+    }
+
+    int child_pid2 = fork();
+    if (child_pid2 < 0) {
+      printf(2, "fork failed\n");
+      break;
+    } else if (child_pid2 == 0) {
+      close(0);
+      dup(p[0]);
+      close(p[1]);
+      runcmd(pcmd->right);
+    }
+
+    close(p[0]);
+    close(p[1]);
+    wait();
+    wait();
+
     break;
 
   case BACK:

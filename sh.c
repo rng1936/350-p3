@@ -11,7 +11,7 @@
 #define LIST  4
 #define BACK  5
 
-#define MAXARGS 10
+#define MAXARGS 120 // needed for hist print, may need to go higher
 
 struct cmd {
   int type;
@@ -53,6 +53,7 @@ int fork1(void);  // Fork but panics on failure.
 void panic(char*);
 struct cmd *parsecmd(char*);
 
+char history[10][100];
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -73,6 +74,28 @@ runcmd(struct cmd *cmd)
 
   case EXEC:
     ecmd = (struct execcmd*)cmd;
+    if (!strcmp(ecmd->argv[0], "hist")) { // all hist commands (print or num) handled here
+      if(!strcmp(ecmd->argv[1], "print")) {
+        char histPrintCmd[100] = "histPrint"; //create string "histPrint <history> BREAK <history> BREAK...."
+        for (int i = 0; i < 10; i++) {
+          if (strcmp(history[i], "empty")) {
+            strcpy (histPrintCmd + strlen (histPrintCmd), " ");
+            strcpy (histPrintCmd + strlen (histPrintCmd), history[i]);
+            strcpy (histPrintCmd + strlen (histPrintCmd), " ");
+            strcpy (histPrintCmd + strlen (histPrintCmd), "BREAK");
+          }
+        }
+        runcmd(parsecmd(histPrintCmd));
+      } else {
+        int historyIndex = atoi(ecmd->argv[1])-1; //hist <num> commands handled here, parsed like other commands
+        if (historyIndex >= 0 && historyIndex <= 9) {
+          runcmd(parsecmd(history[historyIndex]));
+        } else {
+          printf(2, "usage\n");
+          break;
+        }
+      }
+    }
     if(ecmd->argv[0] == 0)
       exit();
     exec(ecmd->argv[0], ecmd->argv);
@@ -151,11 +174,20 @@ getcmd(char *buf, int nbuf)
   return 0;
 }
 
+void updateHist(char *buf) { // maintain history buffer
+  for (int i = 9; i >= 1; i--) {
+    strcpy(history[i], history[i-1]);
+  }
+  strcpy(history[0], buf);
+}
 int
 main(void)
 {
   static char buf[100];
   int fd;
+  for (int i = 0; i < 10; i++) { // initialize the history buffer
+    strcpy(history[i], "empty");
+  }
 
   // Ensure that three file descriptors are open.
   while((fd = open("console", O_RDWR)) >= 0){
@@ -173,6 +205,14 @@ main(void)
       if(chdir(buf+3) < 0)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
+    }
+    if (!strcmp(buf, "\n")) { // exclude empty lines from history (interferes with "hist print")
+      printf(2, "in empty check\n");
+      continue;
+    }
+    // exclude hist commands from history buffer
+    if (!(buf[0] == 'h' && buf[1] == 'i' && buf[2] == 's' && buf[3] == 't' && buf[4] == ' ')) {
+      updateHist(buf); 
     }
     if(fork1() == 0)
       runcmd(parsecmd(buf));

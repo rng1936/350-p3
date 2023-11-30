@@ -179,6 +179,7 @@ UPROGS=\
 	_shutdown \
 	_sleep_and_echo \
 	_ps \
+	_histPrint \
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

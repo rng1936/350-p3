@@ -11,7 +11,7 @@
 #define LIST  4
 #define BACK  5
 
-#define MAXARGS 120 // needed for hist print, may need to go higher
+#define MAXARGS 10
 
 struct cmd {
   int type;
@@ -76,16 +76,12 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if (!strcmp(ecmd->argv[0], "hist")) { // all hist commands (print or num) handled here
       if(!strcmp(ecmd->argv[1], "print")) {
-        char histPrintCmd[100] = "histPrint"; //create string "histPrint <history> BREAK <history> BREAK...."
         for (int i = 0; i < 10; i++) {
           if (strcmp(history[i], "empty")) {
-            strcpy (histPrintCmd + strlen (histPrintCmd), " ");
-            strcpy (histPrintCmd + strlen (histPrintCmd), history[i]);
-            strcpy (histPrintCmd + strlen (histPrintCmd), " ");
-            strcpy (histPrintCmd + strlen (histPrintCmd), "BREAK");
+            printf(1, "%d. %s", i+1, history[i]);
           }
         }
-        runcmd(parsecmd(histPrintCmd));
+        exit(); // process exits after printing
       } else {
         int historyIndex = atoi(ecmd->argv[1])-1; //hist <num> commands handled here, parsed like other commands
         if (historyIndex >= 0 && historyIndex <= 9) {
@@ -207,7 +203,6 @@ main(void)
       continue;
     }
     if (!strcmp(buf, "\n")) { // exclude empty lines from history (interferes with "hist print")
-      printf(2, "in empty check\n");
       continue;
     }
     // exclude hist commands from history buffer

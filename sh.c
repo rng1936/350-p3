@@ -99,39 +99,50 @@ runcmd(struct cmd *cmd)
     break;
 
   case REDIR:
-  {
+{
     #ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
+    #define STDOUT_FILENO 1
+    #endif
 
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
+    #ifndef STDIN_FILENO
+    #define STDIN_FILENO 0
+    #endif
+
     struct redircmd *rcmd = (struct redircmd*)cmd;
     int fd, mode = rcmd->mode;
     char *file = rcmd->file;
 
-    fd = open(file, mode);
+    if (mode == O_WRONLY || mode == (O_WRONLY|O_CREATE)) {
+        // Attempt to delete the existing file (if it exists)
+        unlink(file);
+        // Open the file with O_WRONLY and O_CREATE flags
+        fd = open(file, mode);
+    } else if (mode == O_RDONLY) {
+        fd = open(file, mode);
+    } else {
+        printf(2, "Unsupported redirection mode\n");
+        exit();
+    }
+
     if (fd < 0) {
-      printf(2, "open %s failed\n", file);
-      exit();
+        printf(2, "open %s failed\n", file);
+        exit();
     }
 
     if (mode == O_WRONLY || mode == (O_WRONLY|O_CREATE)) {
-      close(STDOUT_FILENO);
-      dup(fd);
+        close(STDOUT_FILENO);
+        dup(fd);
     } else if (mode == O_RDONLY) {
-      close(STDIN_FILENO);
-      dup(fd);
-    } else {
-      printf(2, "Unsupported redirection mode\n");
-      exit();
+        close(STDIN_FILENO);
+        dup(fd);
     }
+
     close(fd);
 
     runcmd(rcmd->cmd);
     break;
-  }
+}
+
 
 
   case LIST:

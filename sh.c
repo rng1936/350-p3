@@ -99,8 +99,40 @@ runcmd(struct cmd *cmd)
     break;
 
   case REDIR:
-    printf(2, "Redirection Not Implemented\n");
+  {
+    #ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+    struct redircmd *rcmd = (struct redircmd*)cmd;
+    int fd, mode = rcmd->mode;
+    char *file = rcmd->file;
+
+    fd = open(file, mode);
+    if (fd < 0) {
+      printf(2, "open %s failed\n", file);
+      exit();
+    }
+
+    if (mode == O_WRONLY || mode == (O_WRONLY|O_CREATE)) {
+      close(STDOUT_FILENO);
+      dup(fd);
+    } else if (mode == O_RDONLY) {
+      close(STDIN_FILENO);
+      dup(fd);
+    } else {
+      printf(2, "Unsupported redirection mode\n");
+      exit();
+    }
+    close(fd);
+
+    runcmd(rcmd->cmd);
     break;
+  }
+
 
   case LIST:
     lcmd = (struct listcmd*)cmd;

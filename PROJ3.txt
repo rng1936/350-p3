@@ -1,1 +1,2 @@
 
+Vincenzo Cataneo- I did 3.3 for the project and the code for the implementation passed all the provided test. In the code there was no included 0_trunc that I could find so I used unlink to manually trunc the file when you are sending the output to be written in the file to overwrite previous text in there.

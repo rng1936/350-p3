@@ -53,6 +53,7 @@ void panic(char*);
 struct cmd *parsecmd(char*);
 
 char history[10][100];
+int numCommands = 0; // allows for usage message
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -78,6 +79,10 @@ runcmd(struct cmd *cmd)
   case EXEC:
     ecmd = (struct execcmd*)cmd;
     if (!strcmp(ecmd->argv[0], "hist")) { // all hist commands (print or num) handled here
+      if (!(ecmd->argv[2] == '\0')) {
+          printf(2, "usage: hist print OR hist <num 1-10>\n"); // additional usage check
+          break;
+      }
       if(!strcmp(ecmd->argv[1], "print")) {
         for (int i = 0; i < 10; i++) {
           if (strcmp(history[i], "empty")) {
@@ -88,9 +93,14 @@ runcmd(struct cmd *cmd)
       } else {
         int historyIndex = atoi(ecmd->argv[1])-1; //hist <num> commands handled here, parsed like other commands
         if (historyIndex >= 0 && historyIndex <= 9) {
-          runcmd(parsecmd(history[historyIndex]));
+          if (historyIndex+1 <= numCommands) { // prevents hist <num> from running a command that is not yet filled in the history
+            runcmd(parsecmd(history[historyIndex]));
+          } else {
+            printf(2, "usage: %d commands have been entered\n", numCommands);
+            break;
+          }
         } else {
-          printf(2, "usage\n");
+          printf(2, "usage: hist print OR hist <num 1-10>\n");
           break;
         }
       }
@@ -255,7 +265,8 @@ main(void)
     }
     // exclude hist commands from history buffer
     if (!(buf[0] == 'h' && buf[1] == 'i' && buf[2] == 's' && buf[3] == 't' && buf[4] == ' ')) {
-      updateHist(buf); 
+      updateHist(buf);
+      numCommands++; // allows for usage check
     }
     if(fork1() == 0)
       runcmd(parsecmd(buf));

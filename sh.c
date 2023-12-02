@@ -200,16 +200,11 @@ runcmd(struct cmd *cmd)
 
   case BACK:
       bcmd = (struct backcmd*)cmd;
-      ecmd = (struct execcmd*)bcmd->cmd;
-
-      int pid = fork1();
-      if(pid==0){
-        exec(ecmd->argv[0],ecmd->argv);
-        printf(2, "Backgrounding not implemented\n",ecmd->argv[0]);
-        }
-        
+      if(fork1()==0)
+        runcmd(bcmd->cmd);
       break;
   }
+  exit();
 }
 
 int

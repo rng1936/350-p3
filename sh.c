@@ -3,7 +3,6 @@
 #include "types.h"
 #include "user.h"
 #include "fcntl.h"
-
 // Parsed command representation
 #define EXEC  1
 #define REDIR 2
@@ -62,6 +61,10 @@ runcmd(struct cmd *cmd)
   //struct backcmd *bcmd;
   struct execcmd *ecmd;
   struct listcmd *lcmd;
+  
+  struct backcmd *bcmd;
+  //struct execcmd *ecmd;
+
   struct pipecmd *pcmd;
   //struct redircmd *rcmd;
   
@@ -196,10 +199,16 @@ runcmd(struct cmd *cmd)
     break;
 
   case BACK:
-    printf(2, "Backgrounding not implemented\n");
-    break;
+      bcmd = (struct backcmd*)cmd;
+      ecmd = (struct execcmd*)bcmd->cmd;
+
+      int pid = fork1();
+      if(pid==0){
+        exec(ecmd->argv[0],ecmd->argv);
+        printf(2, "Backgrounding not implemented\n",ecmd->argv[0]);
+        }
+      break;
   }
-  exit();
 }
 
 int

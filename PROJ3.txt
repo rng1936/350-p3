@@ -1,2 +1,5 @@
 
 Vincenzo Cataneo- I did 3.3 for the project and the code for the implementation passed all the provided test. In the code there was no included 0_trunc that I could find so I used unlink to manually trunc the file when you are sending the output to be written in the file to overwrite previous text in there.
+
+Matthew Zhou - I did 3.4 for the proeject which was command background execution, on a "&" the shell would execute a command in the background. In the code i use the background command pointer to execute the command using fork. This would yeild a zombie process. To which we needed waitpid, but that was extra credit. After running the test funciton it printed the ls first which was the command in the background responding first. Then the sleep and echo printed. 
+
